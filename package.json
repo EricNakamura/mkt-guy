@@ -1,0 +1,17 @@
+{
+  "name": "mkt-guy",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Motor de obras M&M Remodelações: fotos + brief -> página SEO + posts",
+  "scripts": {
+    "demo": "node --env-file-if-exists=.env scripts/demo.js && node --env-file-if-exists=.env src/server.js",
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "bot": "node --env-file-if-exists=.env src/telegram.js",
+    "publish": "node --env-file-if-exists=.env scripts/publish.js",
+    "test": "node --env-file-if-exists=.env scripts/check.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

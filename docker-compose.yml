@@ -1,0 +1,55 @@
+name: mkt-guy
+
+x-app-env: &app-env
+  OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+  OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemini-2.5-flash}
+  OPENROUTER_ASR_MODEL: ${OPENROUTER_ASR_MODEL:-openai/whisper-large-v3}
+  OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+  SITE_URL: ${SITE_URL:-https://www.memremodelacoes.pt}
+  WHATSAPP: ${WHATSAPP:-351933873125}
+  PUBLIC_URL: ${PUBLIC_URL:-http://localhost:4321}
+  DASHBOARD_AUTH: ${DASHBOARD_AUTH:-}
+
+services:
+  web:
+    build: .
+    image: mkt-guy:local
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      HOST: 0.0.0.0
+      PREVIEW_PORT: 4321
+    ports:
+      - "${PORT:-4321}:4321"
+    volumes:
+      - obras:/app/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4321/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  bot:
+    profiles: ["bot"]
+    build: .
+    image: mkt-guy:local
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      ALLOWED_CHAT_IDS: ${ALLOWED_CHAT_IDS:-}
+    volumes:
+      - obras:/app/data
+    depends_on:
+      web:
+        condition: service_healthy
+
+volumes:
+  obras:

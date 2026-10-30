@@ -1,0 +1,7 @@
+.env
+data/
+node_modules/
+.DS_Store
+
+# Plano interno (contém números e notas de negócio)
+plan.md
