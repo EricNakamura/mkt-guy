@@ -27,7 +27,7 @@ cp .env.example .env
 # DASHBOARD_AUTH=utilizador:password e, se usares bot, TELEGRAM_BOT_TOKEN
 
 docker compose up -d --build
-docker compose --profile bot up -d --build   # inclui o bot do Telegram
+docker compose --profile bot up -d --build   # inclui o bot (exige TELEGRAM_BOT_TOKEN)
 ```
 
 O painel fica em `http://IP_DA_VPS:4321`, ou em `PUBLIC_URL` se tiveres um proxy.
