@@ -60,5 +60,7 @@ services:
 
 volumes:
   obras:
+  # O volume é criado pelo compose do site (mm-remodelacoes) e consumido aqui.
   obras-public:
+    external: true
     name: mm-obras-public

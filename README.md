@@ -71,16 +71,23 @@ O `docker-compose.dokploy.yml` já escreve o HTML em `/published`, no volume
 `mm-obras-public`. O site (`mm-remodelacoes`) monta o mesmo volume read-only em
 `/app/dist/obras` e serve as páginas sem rebuild:
 
+No compose do site:
+
 ```yaml
     volumes:
-      - mm-obras-public:/app/dist/obras:ro
+      - obras-public:/app/dist/obras:ro
+# ...
+volumes:
+  obras-public:
+    name: mm-obras-public
 ```
 
-No mkt-guy, o volume é criado com o nome global:
+O site cria o volume; o mkt-guy consome-o como externo:
 
 ```yaml
 volumes:
   obras-public:
+    external: true
     name: mm-obras-public
 ```
 
