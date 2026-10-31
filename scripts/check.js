@@ -88,11 +88,22 @@ try {
     } catch {}
     await new Promise((r) => setTimeout(r, 100));
   }
-  assert.equal((await fetch(`http://127.0.0.1:${port}/`)).status, 401);
-  const allowed = await fetch(`http://127.0.0.1:${port}/`, {
-    headers: { authorization: `Basic ${Buffer.from('teste:segredo').toString('base64')}` },
-  });
+  const denied = await fetch(`http://127.0.0.1:${port}/`);
+  assert.equal(denied.status, 401);
+  assert.match(denied.headers.get('www-authenticate') ?? '', /Basic/);
+
+  const auth = { authorization: `Basic ${Buffer.from('teste:segredo').toString('base64')}` };
+  const allowed = await fetch(`http://127.0.0.1:${port}/`, { headers: auth });
   assert.equal(allowed.status, 200);
+  assert.equal(allowed.headers.get('x-content-type-options'), 'nosniff');
+  assert.match(allowed.headers.get('content-security-policy') ?? '', /frame-ancestors 'self'/);
+
+  const forged = await fetch(`http://127.0.0.1:${port}/api/publish`, {
+    method: 'POST',
+    headers: { ...auth, 'Content-Type': 'application/json', origin: 'https://evil.example' },
+    body: '{"slug":"x","consent":true}',
+  });
+  assert.equal(forged.status, 403);
 } finally {
   server.kill();
 }

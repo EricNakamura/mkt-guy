@@ -181,7 +181,7 @@ async function handleMessage(msg) {
 
   if (msg.voice || msg.audio) {
     const file = msg.voice ?? msg.audio;
-    const ext = (file.file_name?.split('.').pop() ?? 'oga').toLowerCase();
+    const ext = (file.file_name?.split('.').pop() ?? 'oga').toLowerCase().replace(/[^a-z0-9]/g, '') || 'oga';
     const dest = path.join(uploadRoot, chatId, `${Date.now()}.${ext}`);
     try {
       await download(file.file_id, dest);

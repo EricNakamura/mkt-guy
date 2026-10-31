@@ -30,9 +30,14 @@ docker compose up -d --build
 docker compose --profile bot up -d --build   # inclui o bot (exige TELEGRAM_BOT_TOKEN)
 ```
 
-O painel fica em `http://IP_DA_VPS:4321`, ou em `PUBLIC_URL` se tiveres um proxy.
+Por omissão a porta fica ligada a `127.0.0.1:4321` (só acessível na VPS). Para
+expor diretamente, define `BIND_ADDR=0.0.0.0` — só com firewall e `DASHBOARD_AUTH`.
+O recomendado é um proxy HTTPS à frente (Traefik/Dokploy, Caddy ou Nginx).
 `/health` responde sem autenticação; tudo o resto exige `DASHBOARD_AUTH`. Com
-`HOST=0.0.0.0` (Docker) e sem `DASHBOARD_AUTH`, o painel recusa todos os pedidos.
+`HOST=0.0.0.0` e sem `DASHBOARD_AUTH`, o painel recusa todos os pedidos.
+
+No **Dokploy**, usa o `docker-compose.dokploy.yml` (não publica portas; o proxy
+fala com a rede interna) e aponta o domínio ao serviço `web`, porta `4321`.
 
 Para semear as obras de demonstração dentro do volume:
 
@@ -55,8 +60,8 @@ docker run --rm -v mkt-guy_obras:/data -v "$PWD":/backup alpine \
 
 Não deixes o painel em HTTP aberto: passam fotos de clientes. Põe o `web` atrás
 do Traefik/Dokploy que já usas (ou Caddy/Nginx) e aponta `PUBLIC_URL` para o
-domínio HTTPS. No Dokploy, cria a app com este `docker-compose.yml`, define as
-variáveis no painel e deixa o proxy tratar do domínio.
+domínio HTTPS. No Dokploy, cria a app com o `docker-compose.dokploy.yml`, define
+as variáveis no painel e deixa o proxy tratar do domínio e do certificado.
 
 ### Publicar no site a partir do container
 
@@ -122,6 +127,7 @@ O bot usa long polling: não precisa de domínio nem webhook. Em Docker, define
 | `SITE_REPO` | caminho local do repositório do site |
 | `WHATSAPP` | número do CTA (só dígitos) |
 | `PREVIEW_PORT` / `HOST` | servidor de preview (o Docker força `4321` / `0.0.0.0`) |
+| `BIND_ADDR` | interface da porta publicada pelo compose (`127.0.0.1` por omissão) |
 | `PUBLIC_URL` | URL pública do painel, usada nos links do bot |
 | `DASHBOARD_AUTH` | `utilizador:password` do painel; obrigatório fora de localhost |
 | `TELEGRAM_BOT_TOKEN` | token do bot |

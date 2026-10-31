@@ -24,8 +24,35 @@ function sendHtml(res, html, status = 200) {
 }
 
 function sendJson(res, data, status = 200) {
-  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+  res.writeHead(status, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+  });
   res.end(JSON.stringify(data));
+}
+
+function securityHeaders(req, res) {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'same-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; frame-ancestors 'self'; base-uri 'none'; form-action 'self'"
+  );
+  if (req.headers['x-forwarded-proto'] === 'https' || req.socket.encrypted) {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000');
+  }
+}
+
+function sameOrigin(req) {
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  try {
+    return new URL(origin).host === req.headers.host;
+  } catch {
+    return false;
+  }
 }
 
 function redirect(res, location) {
@@ -63,9 +90,15 @@ async function main() {
     const pathname = url.pathname;
     let m;
 
+    securityHeaders(req, res);
+
     try {
       if (req.method === 'GET' && pathname === '/health') {
         return sendJson(res, { status: 'ok', obras: (await listObras()).length });
+      }
+
+      if (!['GET', 'HEAD'].includes(req.method) && !sameOrigin(req)) {
+        return sendJson(res, { error: 'Origem inválida' }, 403);
       }
 
       if (!authorized(req)) {
@@ -114,7 +147,7 @@ async function main() {
         const data = await fs.readFile(abs);
         res.writeHead(200, {
           'Content-Type': MIME[path.extname(file).toLowerCase()] ?? 'application/octet-stream',
-          'Cache-Control': 'public, max-age=3600',
+          'Cache-Control': 'private, max-age=3600',
         });
         return res.end(data);
       }
