@@ -5,10 +5,11 @@ x-app-env: &app-env
   OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemini-2.5-flash}
   OPENROUTER_ASR_MODEL: ${OPENROUTER_ASR_MODEL:-openai/whisper-large-v3}
   OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
-  SITE_URL: ${SITE_URL:-https://www.memremodelacoes.pt}
+  SITE_URL: ${SITE_URL:-https://memremodelacoes.pt}
   WHATSAPP: ${WHATSAPP:-351933873125}
   PUBLIC_URL: ${PUBLIC_URL:-https://mkt.memremodelacoes.pt}
   DASHBOARD_AUTH: ${DASHBOARD_AUTH:-}
+  PUBLISH_DIR: /published
 
 # Deploy Dokploy/Traefik: sem portas publicadas; o proxy fala com a rede interna.
 # Se o Dokploy não resolver o contexto do build, define BUILD_CONTEXT com o caminho do clone.
@@ -26,6 +27,7 @@ services:
       - "4321"
     volumes:
       - obras:/app/data
+      - obras-public:/published
     healthcheck:
       test:
         [
@@ -51,9 +53,12 @@ services:
       ALLOWED_CHAT_IDS: ${ALLOWED_CHAT_IDS:-}
     volumes:
       - obras:/app/data
+      - obras-public:/published
     depends_on:
       web:
         condition: service_healthy
 
 volumes:
   obras:
+  obras-public:
+    name: mm-obras-public

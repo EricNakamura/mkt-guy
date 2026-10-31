@@ -5,7 +5,7 @@ x-app-env: &app-env
   OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemini-2.5-flash}
   OPENROUTER_ASR_MODEL: ${OPENROUTER_ASR_MODEL:-openai/whisper-large-v3}
   OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
-  SITE_URL: ${SITE_URL:-https://www.memremodelacoes.pt}
+  SITE_URL: ${SITE_URL:-https://memremodelacoes.pt}
   WHATSAPP: ${WHATSAPP:-351933873125}
   PUBLIC_URL: ${PUBLIC_URL:-http://localhost:4321}
   DASHBOARD_AUTH: ${DASHBOARD_AUTH:-}

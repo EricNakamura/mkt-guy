@@ -67,20 +67,27 @@ as variáveis no painel e deixa o proxy tratar do domínio e do certificado.
 
 ### Publicar no site a partir do container
 
-O `publish` copia a obra para o repositório do site, que não é montado por
-omissão. No VPS, acrescenta ao serviço `web`:
+O `docker-compose.dokploy.yml` já escreve o HTML em `/published`, no volume
+`mm-obras-public`. O site (`mm-remodelacoes`) monta o mesmo volume read-only em
+`/app/dist/obras` e serve as páginas sem rebuild:
 
 ```yaml
     volumes:
-      - obras:/app/data
-      - /caminho/para/mm-remodelacoes:/site
-    environment:
-      SITE_REPO: /site
+      - mm-obras-public:/app/dist/obras:ro
 ```
 
-Depois confirma o consentimento e publica com
-`docker compose exec web npm run publish -- <slug> --consent`, seguido do
-build/deploy do site.
+No mkt-guy, o volume é criado com o nome global:
+
+```yaml
+volumes:
+  obras-public:
+    name: mm-obras-public
+```
+
+Confirma o consentimento e publica com
+`docker compose exec web npm run publish -- <slug> --consent` (ou pelo painel).
+O `PUBLISH_DIR` do container é `/published`; em local, sem `PUBLISH_DIR`, o
+`publish` usa `<SITE_REPO>/public` como antes.
 
 ## O que tens no painel
 
@@ -93,16 +100,19 @@ build/deploy do site.
 
 ## Publicar no site
 
-O `SITE_REPO` aponta para o repositório do site. Publicar copia a página para
-`public/obras/<slug>/`, copia a logo para `public/assets/leroy-merlin.svg`,
-atualiza o `sitemap.xml` e gera o hub `/obras/`.
+Em produção, o mkt-guy escreve em `/published` (volume `mm-obras-public`) e o
+site monta esse volume read-only em `/app/dist/obras`. O hub `/obras/` e o
+sitemap são atualizados sem rebuild do site.
+
+Em local, sem `PUBLISH_DIR`, o `SITE_REPO` continua a funcionar: publicar copia
+a página para `public/obras/<slug>/`, copia a logo para
+`public/assets/leroy-merlin.svg`, atualiza o `sitemap.xml` e gera o hub.
 
 ```bash
 npm run publish -- remodelacao-quarto-braga --consent
 ```
 
-Depois faz build/deploy do site (`npm run build` em `mm-remodelacoes`). O
-`--consent` confirma que tens autorização do cliente para publicar as fotos. No
+O `--consent` confirma que tens autorização do cliente para publicar as fotos. No
 painel, a mesma confirmação é uma checkbox.
 
 ## Bot do Telegram
@@ -126,7 +136,8 @@ O bot usa long polling: não precisa de domínio nem webhook. Em Docker, define
 | `OPENROUTER_MODEL` | modelo de texto/visão (default `google/gemini-2.5-flash`) |
 | `OPENROUTER_ASR_MODEL` | transcrição (default `openai/whisper-large-v3`) |
 | `SITE_URL` | domínio usado nos canonicals e links |
-| `SITE_REPO` | caminho local do repositório do site |
+| `SITE_REPO` | caminho local do repositório do site (modo local) |
+| `PUBLISH_DIR` | pasta de saída do publish (no Docker/Dokploy: `/published`) |
 | `WHATSAPP` | número do CTA (só dígitos) |
 | `PREVIEW_PORT` / `HOST` | servidor de preview (o Docker força `4321` / `0.0.0.0`) |
 | `BIND_ADDR` | interface da porta publicada pelo compose (`127.0.0.1` por omissão) |

@@ -35,6 +35,12 @@ async function exists(p) {
   }
 }
 
+async function writeFileAtomic(file, data) {
+  const tmp = `${file}.${process.pid}.tmp`;
+  await fs.writeFile(tmp, data);
+  await fs.rename(tmp, file);
+}
+
 async function uniqueSlug(base, currentSlug = null) {
   let slug = slugify(base) || `obra-${Date.now()}`;
   if (slug === currentSlug) return slug;
@@ -125,17 +131,17 @@ export async function setPartner(slug, show) {
   return content.show_partner;
 }
 
-/** Copia a obra para o site e atualiza sitemap + hub. */
+/** Publica a obra no site e regenera o hub (e o sitemap no modo SITE_REPO). */
 export async function publishObra(slug) {
   assertSlug(slug);
-  if (!config.siteRepo) throw new Error('SITE_REPO não configurado');
-  const publicDir = path.join(config.siteRepo, 'public');
-  if (!(await exists(publicDir))) throw new Error(`public/ não encontrado em ${config.siteRepo}`);
+  const publicDir = config.publishDir;
+  if (!publicDir) throw new Error('PUBLISH_DIR (ou SITE_REPO) não configurado');
+  await fs.mkdir(path.join(publicDir, 'obras'), { recursive: true });
 
   const { content, photos } = await loadObra(slug);
   const target = path.join(publicDir, 'obras', slug);
   await fs.mkdir(path.join(target, 'photos'), { recursive: true });
-  await fs.writeFile(path.join(target, 'index.html'), renderObraPage(content, photos));
+  await writeFileAtomic(path.join(target, 'index.html'), renderObraPage(content, photos));
   for (const file of photos) {
     await fs.copyFile(path.join(obraDir(slug), 'photos', file), path.join(target, 'photos', file));
   }
@@ -143,14 +149,17 @@ export async function publishObra(slug) {
   content.published_at = new Date().toISOString();
   await fs.writeFile(path.join(obraDir(slug), 'content.json'), JSON.stringify(content, null, 2));
 
-  const assetsDir = path.join(publicDir, 'assets');
-  await fs.mkdir(assetsDir, { recursive: true });
-  await fs.copyFile(
-    path.resolve(import.meta.dirname, '..', 'assets', 'leroy-merlin.svg'),
-    path.join(assetsDir, 'leroy-merlin.svg')
-  );
+  // No modo volume partilhado o site já serve a logo estática e gera o sitemap.
+  if (config.siteRepo) {
+    const assetsDir = path.join(publicDir, 'assets');
+    await fs.mkdir(assetsDir, { recursive: true });
+    await fs.copyFile(
+      path.resolve(import.meta.dirname, '..', 'assets', 'leroy-merlin.svg'),
+      path.join(assetsDir, 'leroy-merlin.svg')
+    );
+    await upsertSitemap(publicDir, slug);
+  }
 
-  await upsertSitemap(publicDir, slug);
   await writeHub(publicDir);
   return target;
 }
@@ -181,29 +190,12 @@ async function upsertSitemap(publicDir, slug) {
 }
 
 async function publishedObras() {
-  if (!config.siteRepo) return [];
-  const dir = path.join(config.siteRepo, 'public', 'obras');
-  try {
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-    const obras = [];
-    for (const e of entries) {
-      if (!e.isDirectory()) continue;
-      try {
-        const { content, photos } = await loadObra(e.name);
-        obras.push({ slug: e.name, content, photos });
-      } catch {
-        // ignora
-      }
-    }
-    return obras;
-  } catch {
-    return [];
-  }
+  return (await listObras()).filter(({ content }) => content.published_at);
 }
 
 async function writeHub(publicDir) {
   const obras = await publishedObras();
   const dir = path.join(publicDir, 'obras');
   await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(path.join(dir, 'index.html'), renderHub(obras, '/obras'));
+  await writeFileAtomic(path.join(dir, 'index.html'), renderHub(obras, '/obras'));
 }
