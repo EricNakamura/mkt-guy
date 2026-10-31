@@ -136,10 +136,12 @@ export async function publishObra(slug) {
   assertSlug(slug);
   const publicDir = config.publishDir;
   if (!publicDir) throw new Error('PUBLISH_DIR (ou SITE_REPO) não configurado');
-  await fs.mkdir(path.join(publicDir, 'obras'), { recursive: true });
+  // No volume, PUBLISH_DIR aponta para a pasta que o site monta em dist/obras.
+  const obrasDir = config.siteRepo ? path.join(publicDir, 'obras') : publicDir;
+  await fs.mkdir(obrasDir, { recursive: true });
 
   const { content, photos } = await loadObra(slug);
-  const target = path.join(publicDir, 'obras', slug);
+  const target = path.join(obrasDir, slug);
   await fs.mkdir(path.join(target, 'photos'), { recursive: true });
   await writeFileAtomic(path.join(target, 'index.html'), renderObraPage(content, photos));
   for (const file of photos) {
@@ -160,7 +162,7 @@ export async function publishObra(slug) {
     await upsertSitemap(publicDir, slug);
   }
 
-  await writeHub(publicDir);
+  await writeHub(obrasDir);
   return target;
 }
 
@@ -193,9 +195,8 @@ async function publishedObras() {
   return (await listObras()).filter(({ content }) => content.published_at);
 }
 
-async function writeHub(publicDir) {
+async function writeHub(obrasDir) {
   const obras = await publishedObras();
-  const dir = path.join(publicDir, 'obras');
-  await fs.mkdir(dir, { recursive: true });
-  await writeFileAtomic(path.join(dir, 'index.html'), renderHub(obras, '/obras'));
+  await fs.mkdir(obrasDir, { recursive: true });
+  await writeFileAtomic(path.join(obrasDir, 'index.html'), renderHub(obras, '/obras'));
 }
