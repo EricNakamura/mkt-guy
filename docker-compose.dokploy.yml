@@ -43,6 +43,7 @@ services:
     build:
       context: ${BUILD_CONTEXT:-.}
       dockerfile: Dockerfile
+    command: ["node", "src/telegram.js"]
     restart: unless-stopped
     environment:
       <<: *app-env
