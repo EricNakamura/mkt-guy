@@ -37,7 +37,9 @@ O recomendado é um proxy HTTPS à frente (Traefik/Dokploy, Caddy ou Nginx).
 `HOST=0.0.0.0` e sem `DASHBOARD_AUTH`, o painel recusa todos os pedidos.
 
 No **Dokploy**, usa o `docker-compose.dokploy.yml` (não publica portas; o proxy
-fala com a rede interna) e aponta o domínio ao serviço `web`, porta `4321`.
+fala com a rede interna) e aponta o domínio ao serviço `web`, porta `4321`. Se o
+build falhar com `/package.json: not found`, define `BUILD_CONTEXT` no ambiente
+com o caminho do clone (ex.: `/etc/dokploy/compose/<appName>/code`).
 
 Para semear as obras de demonstração dentro do volume:
 
