@@ -14,11 +14,23 @@ x-app-env: &app-env
 # Deploy Dokploy/Traefik: sem portas publicadas; o proxy fala com a rede interna.
 # Se o Dokploy não resolver o contexto do build, define BUILD_CONTEXT com o caminho do clone.
 services:
+  # O volume é criado pelo site como root; o mkt-guy corre como node (1000).
+  publish-init:
+    image: alpine:3.20
+    command: ["sh", "-c", "mkdir -p /published/obras && chown 1000:1000 /published /published/obras"]
+    restart: "no"
+    network_mode: none
+    volumes:
+      - obras-public:/published
+
   web:
     build:
       context: ${BUILD_CONTEXT:-.}
       dockerfile: Dockerfile
     restart: unless-stopped
+    depends_on:
+      publish-init:
+        condition: service_completed_successfully
     environment:
       <<: *app-env
       HOST: 0.0.0.0
