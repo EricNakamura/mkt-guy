@@ -11,9 +11,12 @@ x-app-env: &app-env
   DASHBOARD_AUTH: ${DASHBOARD_AUTH:-}
 
 # Deploy Dokploy/Traefik: sem portas publicadas; o proxy fala com a rede interna.
+# Se o Dokploy não resolver o contexto do build, define BUILD_CONTEXT com o caminho do clone.
 services:
   web:
-    build: .
+    build:
+      context: ${BUILD_CONTEXT:-.}
+      dockerfile: Dockerfile
     restart: unless-stopped
     environment:
       <<: *app-env
@@ -37,7 +40,9 @@ services:
       start_period: 10s
 
   bot:
-    build: .
+    build:
+      context: ${BUILD_CONTEXT:-.}
+      dockerfile: Dockerfile
     restart: unless-stopped
     environment:
       <<: *app-env
