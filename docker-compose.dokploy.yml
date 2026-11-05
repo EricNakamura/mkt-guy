@@ -15,9 +15,11 @@ x-app-env: &app-env
 # Se o Dokploy não resolver o contexto do build, define BUILD_CONTEXT com o caminho do clone.
 services:
   # O volume é criado pelo site como root; o mkt-guy corre como node (1000).
+  # Só é preciso preparar a raiz: o motor escreve <slug>/ e index.html diretamente aqui
+  # (publica em PUBLISH_DIR=/published, que o site monta em dist/obras).
   publish-init:
     image: alpine:3.20
-    command: ["sh", "-c", "mkdir -p /published/obras && chown 1000:1000 /published /published/obras"]
+    command: ["sh", "-c", "mkdir -p /published && chown 1000:1000 /published"]
     restart: "no"
     network_mode: none
     volumes:
